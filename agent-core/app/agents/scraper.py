@@ -7,8 +7,19 @@ import httpx
 
 from app.agents.state import AuditGraphState
 from app.db import get_db_connection
+from app.services.feed_scraper import ReleaseFeedScraper
 
 logger = logging.getLogger(__name__)
+
+_feed_scraper: ReleaseFeedScraper | None = None
+
+
+def get_feed_scraper() -> ReleaseFeedScraper:
+    """Return the module-level ReleaseFeedScraper singleton so rate limits persist."""
+    global _feed_scraper
+    if _feed_scraper is None:
+        _feed_scraper = ReleaseFeedScraper()
+    return _feed_scraper
 
 # MVP mock catalog used when no external release feed is configured.
 MOCK_RELEASES = [
@@ -53,10 +64,11 @@ def scraper_node(state: AuditGraphState) -> dict[str, Any]:
     """Refresh model_releases and eval_datasets with new entries (idempotent)."""
     inserted_models = 0
     inserted_prompts = 0
+    releases = get_feed_scraper().fetch_all(use_fallback=True)
 
     with get_db_connection() as conn:
         with conn.cursor() as cur:
-            for model_name, provider, release_date in MOCK_RELEASES:
+            for release in releases:
                 cur.execute(
                     """
                     INSERT INTO model_releases (model_name, provider, release_date, audited)
@@ -64,7 +76,7 @@ def scraper_node(state: AuditGraphState) -> dict[str, Any]:
                     ON CONFLICT (model_name, provider) DO NOTHING
                     RETURNING id
                     """,
-                    (model_name, provider, release_date),
+                    (release.model_name, release.provider, release.release_date),
                 )
                 if cur.fetchone():
                     inserted_models += 1
