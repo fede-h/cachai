@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router
+from app.api.telemetry import router as telemetry_router
 from app.db import close_db_pool, init_db_pool
 from app.scheduler import start_scheduler, stop_scheduler
 
@@ -40,3 +41,4 @@ app.add_middleware(
 )
 
 app.include_router(router)
+app.include_router(telemetry_router)
