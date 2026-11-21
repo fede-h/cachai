@@ -66,20 +66,27 @@ def evaluate_in_sandbox(category: str, prompt_text: str, model_response: str) ->
         ).encode("utf-8")
     ).decode("ascii")
 
+    container = None
     try:
         client = docker.from_env()
-        output_bytes = client.containers.run(
+        container = client.containers.run(
             image=settings.sandbox_image,
             command=["python", "-c", SANDBOX_EVAL_SCRIPT, encoded_payload],
+            detach=True,
             network_disabled=True,
             mem_limit=settings.sandbox_mem_limit,
             pids_limit=64,
             read_only=True,
-            remove=True,
+            cap_drop=["ALL"],
+            security_opt=["no-new-privileges:true"],
             stdout=True,
             stderr=True,
         )
-        raw_output = output_bytes.decode("utf-8", errors="replace").strip()
+        wait_result = container.wait(timeout=settings.sandbox_timeout_seconds)
+        status_code = wait_result.get("StatusCode", 1) if isinstance(wait_result, dict) else 0
+        raw_output = container.logs(stdout=True, stderr=True).decode("utf-8", errors="replace").strip()
+        if status_code != 0:
+            raise RuntimeError(f"Sandbox exited with status {status_code}: {raw_output}")
         parsed = json.loads(raw_output.splitlines()[-1])
         return SandboxEvalResult(
             passed=bool(parsed["passed"]),
@@ -90,6 +97,12 @@ def evaluate_in_sandbox(category: str, prompt_text: str, model_response: str) ->
     except (DockerException, Exception) as exc:
         logger.warning("Docker sandbox unavailable (%s); running local deterministic fallback.", exc)
         return _evaluate_locally(category, model_response, str(exc))
+    finally:
+        if container is not None:
+            try:
+                container.remove(force=True)
+            except Exception as cleanup_exc:
+                logger.debug("Failed to remove sandbox container cleanly: %s", cleanup_exc)
 
 
 def _evaluate_locally(category: str, model_response: str, reason: str) -> SandboxEvalResult:
