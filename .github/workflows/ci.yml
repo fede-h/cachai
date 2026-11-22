@@ -5,6 +5,7 @@ on:
     branches:
       - main
   pull_request:
+  workflow_dispatch:
 
 jobs:
   agent-core:
@@ -54,3 +55,14 @@ jobs:
       - name: Build Next.js application
         working-directory: web-blog
         run: npm run build
+
+  e2e-smoke:
+    name: E2E Smoke Suite (Docker Compose)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run E2E smoke suite
+        run: ./scripts/e2e_smoke.sh --down
