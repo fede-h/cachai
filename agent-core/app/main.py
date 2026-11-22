@@ -4,6 +4,7 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.leaderboard import router as leaderboard_router
 from app.api.routes import router
 from app.api.telemetry import router as telemetry_router
 from app.db import close_db_pool, init_db_pool
@@ -42,3 +43,4 @@ app.add_middleware(
 
 app.include_router(router)
 app.include_router(telemetry_router)
+app.include_router(leaderboard_router)
