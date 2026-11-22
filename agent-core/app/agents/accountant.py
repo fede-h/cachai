@@ -4,13 +4,25 @@ from typing import Any
 from app.agents.state import AuditGraphState
 from app.config import get_settings
 from app.db import get_db_connection
+from app.services.circuit_breaker import get_circuit_breaker
 from app.services.litellm_client import LiteLLMClient
 
 logger = logging.getLogger(__name__)
 
 
 def accountant_node(state: AuditGraphState) -> dict[str, Any]:
-    """Check remaining budget via LiteLLM Proxy (or local DB ledger) before auditing."""
+    """Check circuit breaker and remaining budget via LiteLLM Proxy (or local DB ledger) before auditing."""
+    breaker = get_circuit_breaker()
+    if not breaker.allow_request():
+        status = breaker.status()
+        reason = f"Rejected (circuit breaker {status['state']}): {status['reason'] or 'circuit open'}"
+        logger.warning("Accountant decision: %s", reason)
+        return {
+            "budget_approved": False,
+            "budget_remaining_usd": 0.0,
+            "budget_reason": reason,
+        }
+
     settings = get_settings()
     client = LiteLLMClient()
 
