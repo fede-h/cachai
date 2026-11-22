@@ -8,6 +8,7 @@ from app.api.leaderboard import router as leaderboard_router
 from app.api.routes import router
 from app.api.telemetry import router as telemetry_router
 from app.db import close_db_pool, init_db_pool
+from app.middleware import RateLimitMiddleware
 from app.scheduler import start_scheduler, stop_scheduler
 
 logging.basicConfig(
@@ -34,6 +35,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(RateLimitMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
