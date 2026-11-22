@@ -8,6 +8,16 @@ import {
   type TriggerDemoResponse,
 } from "@/lib/telemetry";
 
+function formatTargetModel(
+  target: TriggerDemoResponse["target_model"]
+): string {
+  if (!target) return "None selected";
+  if (typeof target === "string") return target;
+  return target.provider
+    ? `${target.model_name} (${target.provider})`
+    : target.model_name;
+}
+
 function formatUsd(amount: number): string {
   return `$${amount.toFixed(4)}`;
 }
@@ -136,7 +146,7 @@ export default function DemoTriggerButton() {
             <div className="rounded-lg border border-slate-800/80 bg-slate-950/60 p-3">
               <dt className="text-slate-400">Target Model</dt>
               <dd className="mt-1 font-mono font-medium text-white">
-                {result.target_model ?? "None selected"}
+                {formatTargetModel(result.target_model)}
               </dd>
             </div>
 

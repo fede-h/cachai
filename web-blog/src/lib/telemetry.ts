@@ -29,10 +29,18 @@ export interface BudgetTelemetry {
   source: "litellm" | "db_fallback" | "unavailable";
 }
 
+export interface TargetModelSummary {
+  id?: number;
+  model_name: string;
+  provider?: string;
+  release_date?: string;
+  audited?: boolean;
+}
+
 export interface TriggerDemoResponse {
   status: string;
   trigger_source: string;
-  target_model: string | null;
+  target_model: string | TargetModelSummary | null;
   budget_approved: boolean;
   budget_remaining_usd: number;
   budget_reason: string;
