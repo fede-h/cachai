@@ -42,9 +42,25 @@ CREATE TABLE IF NOT EXISTS blog_posts (
     published_at TIMESTAMPTZ
 );
 
+CREATE TABLE IF NOT EXISTS audit_runs (
+    id SERIAL PRIMARY KEY,
+    trigger_source VARCHAR(64) NOT NULL DEFAULT 'scheduler',
+    model_id INTEGER REFERENCES model_releases(id) ON DELETE SET NULL,
+    status VARCHAR(32) NOT NULL DEFAULT 'running' CHECK (status IN ('running', 'completed', 'failed', 'skipped')),
+    budget_approved BOOLEAN NOT NULL DEFAULT FALSE,
+    evaluations_count INTEGER NOT NULL DEFAULT 0,
+    published_post_slug VARCHAR(255),
+    error_summary TEXT NOT NULL DEFAULT '',
+    started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    finished_at TIMESTAMPTZ,
+    duration_ms INTEGER
+);
+
 CREATE INDEX IF NOT EXISTS idx_model_releases_audited ON model_releases (audited, release_date DESC);
 CREATE INDEX IF NOT EXISTS idx_eval_results_model_id ON eval_results (model_id);
 CREATE INDEX IF NOT EXISTS idx_blog_posts_status_published ON blog_posts (status, published_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_runs_started_at ON audit_runs (started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_runs_status ON audit_runs (status, started_at DESC);
 
 -- Seed model releases (unaudited so the demo trigger has immediate work)
 INSERT INTO model_releases (model_name, provider, release_date, audited)
