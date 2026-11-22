@@ -63,7 +63,7 @@ services:
       SANDBOX_TIMEOUT_SECONDS: ${SANDBOX_TIMEOUT_SECONDS:-15}
       SELF_BASE_URL: http://127.0.0.1:8000
     ports:
-      - "8000:8000"
+      - "${API_PORT:-8000}:8000"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
 
@@ -79,7 +79,7 @@ services:
       INTERNAL_API_URL: ${INTERNAL_API_URL:-http://agent-core:8000}
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
     ports:
-      - "3000:3000"
+      - "${WEB_PORT:-3000}:3000"
 
 volumes:
   postgres_data:
