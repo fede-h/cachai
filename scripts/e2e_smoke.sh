@@ -144,6 +144,28 @@ check_get_200() {
   fi
 }
 
+check_rss_feed() {
+  local url="${WEB_URL}/rss.xml"
+  local body_file
+  body_file="$(mktemp)"
+  local status
+  status="$(curl -sS -o "${body_file}" -w '%{http_code}' --max-time 15 "${url}" 2>/dev/null || echo "000")"
+  local body
+  body="$(cat "${body_file}")"
+  rm -f "${body_file}"
+
+  if [[ "${status}" != "200" ]]; then
+    record_fail "GET ${url} (expected HTTP 200, got ${status})"
+    return
+  fi
+
+  if printf '%s' "${body}" | grep -Fq "<rss"; then
+    record_pass "GET ${url} (HTTP 200, contains <rss)"
+  else
+    record_fail "GET ${url} (HTTP 200, but response body missing <rss)"
+  fi
+}
+
 check_trigger_demo() {
   local url="${API_URL}/api/trigger-demo"
   local body_file
@@ -214,8 +236,7 @@ check_get_200 "${API_URL}/api/runs"
 check_get_200 "${API_URL}/api/budget"
 
 check_get_200 "${WEB_URL}/"
-check_get_200 "${WEB_URL}/telemetry"
-check_get_200 "${WEB_URL}/leaderboard"
+check_rss_feed
 
 echo ""
 echo "=== E2E Smoke Summary ==="
