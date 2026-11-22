@@ -34,6 +34,12 @@ export default function RootLayout({
                   Reports
                 </Link>
                 <Link
+                  href="/leaderboard"
+                  className="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-300 transition hover:bg-slate-900 hover:text-emerald-400"
+                >
+                  Leaderboard
+                </Link>
+                <Link
                   href="/telemetry"
                   className="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-300 transition hover:bg-slate-900 hover:text-emerald-400"
                 >
